@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  MEMBRE
+  RESPONSABLE
+  TRESORIER
+  FORMATEUR
+  ADMINISTRATEUR
+}
+
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  REJECTED
+}
+
+enum CotisationStatus {
+  UNPAID
+  PAID
+  PARTIAL
+}
+
+enum EventType {
+  FORMATION
+  CONFERENCE
+  HACKATHON
+  REUNION
+  RECRUTEMENT
+}
+
+enum ProjectStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model User {
+  id            String           @id @default(cuid())
+  email         String           @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  matricule     String           @unique
+  filiere       String
+  niveau        String
+  phone         String
+  role          Role             @default(MEMBRE)
+  membership    Membership?
+  cotisations   Cotisation[]
+  certificates  Certificate[]
+  eventRegs     EventRegistration[]
+  attendances   Attendance[]
+  projects      ProjectMember[]
+  resources     Resource[]
+  transactions  Transaction[]    @relation("CreatedBy")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model Membership {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status          MembershipStatus @default(PENDING)
+  memberId        String?          @unique
+  academicYear    String
+  validatedAt     DateTime?
+  validatedById   String?
+  rejectionReason String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Cotisation {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      Float
+  status      CotisationStatus @default(UNPAID)
+  paidAt      DateTime?
+  receiptNo   String?          @unique
+  academicYear String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Formation {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  level       String
+  program     String
+  resources   String?
+  published   Boolean  @default(false)
+  quizzes     Quiz[]
+  certificates Certificate[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Quiz {
+  id           String   @id @default(cuid())
+  formationId  String
+  formation    Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  title        String
+  passScore    Int      @default(70)
+  questions    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Certificate {
+  id           String    @id @default(cuid())
+  number       String    @unique
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  formationId  String
+  formation    Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  issuedAt     DateTime  @default(now())
+  verified     Boolean   @default(true)
+}
+
+model Event {
+  id           String   @id @default(cuid())
+  title        String
+  description  String
+  type         EventType
+  speaker      String?
+  startAt      DateTime
+  endAt        DateTime?
+  location     String?
+  meetingLink  String?
+  maxPlaces    Int
+  posterUrl    String?
+  published    Boolean  @default(false)
+  registrations EventRegistration[]
+  attendances  Attendance[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model EventRegistration {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  method    String
+  checkedAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  title        String
+  description  String
+  technologies String
+  githubUrl    String?
+  screenshots  String?
+  status       ProjectStatus @default(DRAFT)
+  members      ProjectMember[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model ProjectMember {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String  @default("contributor")
+
+  @@unique([projectId, userId])
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String
+  fileUrl     String?
+  externalUrl String?
+  uploadedById String
+  uploadedBy  User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Transaction {
+  id            String          @id @default(cuid())
+  type          TransactionType
+  amount        Float
+  category      String
+  description   String
+  receiptUrl    String?
+  createdById   String
+  createdBy     User            @relation("CreatedBy", fields: [createdById], references: [id])
+  transactionAt DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}

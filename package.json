@@ -1,0 +1,24 @@
+{
+  "name": "cjp-hub",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c green,cyan \"npm run dev -w @cjp/backend\" \"npm run dev -w @cjp/frontend\"",
+    "dev:frontend": "npm run dev -w @cjp/frontend",
+    "dev:backend": "npm run dev -w @cjp/backend",
+    "build": "npm run db:generate -w @cjp/backend && npm run build -w @cjp/backend && npm run build -w @cjp/frontend",
+    "lint": "npm run lint -w @cjp/backend && npm run lint -w @cjp/frontend",
+    "db:generate": "npm run db:generate -w @cjp/backend",
+    "db:push": "npm run db:push -w @cjp/backend",
+    "db:migrate": "npm run db:migrate -w @cjp/backend",
+    "db:studio": "npm run db:studio -w @cjp/backend",
+    "db:seed": "npm run db:seed -w @cjp/backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
