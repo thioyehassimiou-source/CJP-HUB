@@ -1,5 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/features/auth/auth-context";
+import { CertificatesPanel } from "@/features/formations/components/certificates-panel";
 import { ApiClientError } from "@/lib/api/client";
 import { createFormationRequest, fetchFormations } from "@/lib/api/formations";
 import type { ApiFormation } from "@/lib/api/types";
@@ -187,11 +189,21 @@ export function FormationsApiList() {
                   <span>{formation.level}</span>
                   <span>Ajoutée le {formatPublishedDate(formation.createdAt)}</span>
                 </div>
+                {formation.published ? (
+                  <Link
+                    to={`/dashboard/formations/${formation.id}/quiz`}
+                    className="mt-4 inline-flex rounded-full border border-[var(--cjp-gold)] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--cjp-gold)] transition-colors hover:bg-[var(--cjp-gold)] hover:text-[var(--cjp-black)]"
+                  >
+                    Passer le quiz
+                  </Link>
+                ) : null}
               </div>
             </article>
           ))}
         </div>
       ) : null}
+
+      <CertificatesPanel />
     </div>
   );
 }

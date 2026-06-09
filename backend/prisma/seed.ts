@@ -1,4 +1,5 @@
 import {
+  ConversationType,
   CotisationStatus,
   EventType,
   MembershipStatus,
@@ -27,6 +28,7 @@ async function main() {
       filiere: "Informatique",
       niveau: "L3",
       phone: "+224620000000",
+      bio: "Président du CJP — passionné par l'open source et la formation des étudiants en informatique.",
       role: Role.ADMINISTRATEUR,
       membership: {
         create: {
@@ -51,6 +53,7 @@ async function main() {
       filiere: "Informatique",
       niveau: "L2",
       phone: "+224621111111",
+      bio: "Développeuse web — membre active du pôle formations et projets open source.",
       role: Role.MEMBRE,
       membership: {
         create: {
@@ -85,6 +88,9 @@ async function main() {
     },
   });
 
+  await prisma.message.deleteMany();
+  await prisma.conversationParticipant.deleteMany();
+  await prisma.conversation.deleteMany();
   await prisma.certificate.deleteMany();
   await prisma.quiz.deleteMany();
   await prisma.formation.deleteMany();
@@ -120,6 +126,51 @@ async function main() {
       },
     ],
   });
+
+  const reactFormation = await prisma.formation.findFirst({
+    where: { title: "React & TypeScript avancé" },
+  });
+
+  if (reactFormation) {
+    await prisma.quiz.create({
+      data: {
+        formationId: reactFormation.id,
+        title: "Quiz de validation — React & TypeScript",
+        passScore: 70,
+        questions: JSON.stringify([
+          {
+            id: "q1",
+            prompt: "Quel hook React permet de gérer l'état local dans un composant fonctionnel ?",
+            options: ["useEffect", "useState", "useMemo", "useContext"],
+            correctIndex: 1,
+          },
+          {
+            id: "q2",
+            prompt: "Quel langage est principalement utilisé avec React dans ce parcours ?",
+            options: ["Python", "TypeScript", "PHP", "Java"],
+            correctIndex: 1,
+          },
+          {
+            id: "q3",
+            prompt: "Que signifie JSX ?",
+            options: [
+              "Java Syntax Extension",
+              "JavaScript XML",
+              "JSON XML",
+              "Joint Script Extension",
+            ],
+            correctIndex: 1,
+          },
+          {
+            id: "q4",
+            prompt: "Quel outil de build est recommandé dans le module frontend du CJP Hub ?",
+            options: ["Webpack seul", "Vite", "Gulp", "Grunt"],
+            correctIndex: 1,
+          },
+        ]),
+      },
+    });
+  }
 
   await prisma.event.createMany({
     data: [
@@ -200,6 +251,9 @@ async function main() {
       paidAt: new Date(),
       receiptNo: "CJP-RCP-2026-0042",
       academicYear: "2025-2026",
+      paymentMethod: "ORANGE_MONEY",
+      paymentPhone: "+224621111111",
+      paymentReference: "OM-SEED-2026-0042",
     },
   });
 
@@ -266,9 +320,46 @@ async function main() {
     ],
   });
 
+  const announcement = await prisma.conversation.create({
+    data: {
+      type: ConversationType.ANNOUNCEMENT,
+      title: "Annonces CJP",
+      messages: {
+        create: {
+          senderId: admin.id,
+          content:
+            "Bienvenue sur CJP Hub ! Les inscriptions pour le Hackathon 2026 sont ouvertes — consultez la rubrique Événements.",
+        },
+      },
+    },
+  });
+
+  const directConversation = await prisma.conversation.create({
+    data: {
+      type: ConversationType.DIRECT,
+      participants: {
+        create: [{ userId: admin.id }, { userId: member.id }],
+      },
+      messages: {
+        create: [
+          {
+            senderId: admin.id,
+            content: "Bonjour Fatoumata, merci pour ta cotisation. Tu peux rejoindre le projet Event Manager.",
+          },
+          {
+            senderId: member.id,
+            content: "Merci ! Je commence dès cette semaine sur le module inscriptions.",
+          },
+        ],
+      },
+    },
+  });
+
   console.log("Seed terminé.");
   console.log("Admin:", admin.email, "/ admin123");
   console.log("Membre:", member.email, "/ membre123");
+  console.log("Annonces:", announcement.id);
+  console.log("Conversation directe:", directConversation.id);
 }
 
 main()

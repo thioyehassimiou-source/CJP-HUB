@@ -4,6 +4,7 @@ import type {
   ApiFinanceTransaction,
   CreateFinanceTransactionPayload,
   FinanceSummary,
+  PayCotisationPayload,
 } from "@/lib/api/types";
 
 export function fetchFinanceSummary() {
@@ -26,6 +27,6 @@ export function createFinanceTransaction(payload: CreateFinanceTransactionPayloa
   return apiPost<{ transaction: ApiFinanceTransaction }>("/finance/transactions", payload, true);
 }
 
-export function payCotisationRequest(amount?: number) {
-  return apiPost<{ cotisation: ApiCotisation }>("/finance/cotisations", { amount }, true);
+export function payCotisationRequest(payload: PayCotisationPayload = {}) {
+  return apiPost<{ cotisation: ApiCotisation }>("/finance/cotisations", payload, true);
 }

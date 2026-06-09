@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "@/lib/api/client";
+import { apiGet, apiPatch, apiPost } from "@/lib/api/client";
 import type { AuthResponse, AuthUser, StatsOverview } from "@/lib/api/types";
 
 export type LoginPayload = {
@@ -31,4 +31,24 @@ export function fetchCurrentUser() {
 
 export function fetchStatsOverview() {
   return apiGet<StatsOverview>("/stats/overview", false);
+}
+
+export type UpdateProfilePayload = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  bio?: string;
+};
+
+export type UpdatePasswordPayload = {
+  currentPassword: string;
+  newPassword: string;
+};
+
+export function updateProfileRequest(payload: UpdateProfilePayload) {
+  return apiPatch<{ user: AuthUser }>("/auth/me", payload, true);
+}
+
+export function updatePasswordRequest(payload: UpdatePasswordPayload) {
+  return apiPatch<{ ok: boolean }>("/auth/password", payload, true);
 }

@@ -161,3 +161,83 @@ authRouter.get(
     res.json({ user: toPublicUser(user) });
   }),
 );
+
+authRouter.patch(
+  "/me",
+  requireAuth,
+  asyncHandler(async (req: AuthRequest, res) => {
+    const body = req.body as {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      bio?: string;
+    };
+
+    const firstName = body.firstName?.trim();
+    const lastName = body.lastName?.trim();
+    const phone = body.phone?.trim();
+    const bio = body.bio?.trim() ?? null;
+
+    if (!firstName || !lastName) {
+      throw new ApiError(400, "Le prénom et le nom sont requis");
+    }
+
+    if (!phone) {
+      throw new ApiError(400, "Le numéro de téléphone est requis");
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.user!.id },
+      data: {
+        firstName,
+        lastName,
+        phone,
+        bio: bio || null,
+      },
+      include: { membership: true },
+    });
+
+    res.json({ user: toPublicUser(user) });
+  }),
+);
+
+authRouter.patch(
+  "/password",
+  requireAuth,
+  asyncHandler(async (req: AuthRequest, res) => {
+    const body = req.body as {
+      currentPassword?: string;
+      newPassword?: string;
+    };
+
+    if (!body.currentPassword || !body.newPassword) {
+      throw new ApiError(400, "Mot de passe actuel et nouveau mot de passe requis");
+    }
+
+    if (body.newPassword.length < 6) {
+      throw new ApiError(400, "Le nouveau mot de passe doit contenir au moins 6 caractères");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+    });
+
+    if (!user) {
+      throw new ApiError(404, "Utilisateur introuvable");
+    }
+
+    const valid = await bcrypt.compare(body.currentPassword, user.passwordHash);
+    if (!valid) {
+      throw new ApiError(401, "Mot de passe actuel incorrect");
+    }
+
+    const passwordHash = await bcrypt.hash(body.newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+
+    res.json({ ok: true });
+  }),
+);

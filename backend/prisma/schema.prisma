@@ -58,6 +58,7 @@ model User {
   filiere       String
   niveau        String
   phone         String
+  bio           String?
   role          Role             @default(MEMBRE)
   membership    Membership?
   cotisations   Cotisation[]
@@ -67,6 +68,8 @@ model User {
   projects      ProjectMember[]
   resources     Resource[]
   transactions  Transaction[]    @relation("CreatedBy")
+  sentMessages  Message[]        @relation("SentMessages")
+  conversations ConversationParticipant[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
@@ -86,13 +89,16 @@ model Membership {
 }
 
 model Cotisation {
-  id          String           @id @default(cuid())
-  userId      String
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amount      Float
-  status      CotisationStatus @default(UNPAID)
-  paidAt      DateTime?
-  receiptNo   String?          @unique
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount           Float
+  status           CotisationStatus @default(UNPAID)
+  paidAt           DateTime?
+  receiptNo        String?          @unique
+  paymentMethod    String?
+  paymentPhone     String?
+  paymentReference String?
   academicYear String
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -132,6 +138,8 @@ model Certificate {
   formation    Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
   issuedAt     DateTime  @default(now())
   verified     Boolean   @default(true)
+
+  @@unique([userId, formationId])
 }
 
 model Event {
@@ -225,4 +233,40 @@ model Transaction {
   transactionAt DateTime        @default(now())
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+}
+
+enum ConversationType {
+  DIRECT
+  ANNOUNCEMENT
+}
+
+model Conversation {
+  id           String                    @id @default(cuid())
+  type         ConversationType
+  title        String?
+  participants ConversationParticipant[]
+  messages     Message[]
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  createdAt      DateTime     @default(now())
 }

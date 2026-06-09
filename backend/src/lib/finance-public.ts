@@ -28,6 +28,9 @@ export function toPublicCotisation(cotisation: Cotisation) {
     academicYear: cotisation.academicYear,
     paidAt: cotisation.paidAt?.toISOString() ?? null,
     receiptNo: cotisation.receiptNo,
+    paymentMethod: cotisation.paymentMethod,
+    paymentPhone: cotisation.paymentPhone,
+    paymentReference: cotisation.paymentReference,
   };
 }
 

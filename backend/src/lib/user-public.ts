@@ -9,6 +9,7 @@ export type PublicUser = {
   filiere: string;
   niveau: string;
   phone: string;
+  bio: string | null;
   role: User["role"];
   membership: {
     status: Membership["status"];
@@ -27,6 +28,7 @@ export function toPublicUser(user: User & { membership: Membership | null }): Pu
     filiere: user.filiere,
     niveau: user.niveau,
     phone: user.phone,
+    bio: user.bio,
     role: user.role,
     membership: user.membership
       ? {

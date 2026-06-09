@@ -7,6 +7,8 @@ import { ConnexionPage } from "@/pages/connexion-page";
 import { DashboardPage } from "@/pages/dashboard-page";
 import { EvenementsPage } from "@/pages/evenements-page";
 import { FormationCoursePage } from "@/pages/formation-course-page";
+import { FormationQuizPage } from "@/pages/formation-quiz-page";
+import { CertificateVerifyPage } from "@/pages/certificate-verify-page";
 import { FormationsPage } from "@/pages/formations-page";
 import { HomePage } from "@/pages/home-page";
 import { InscriptionPage } from "@/pages/inscription-page";
@@ -30,6 +32,8 @@ export function App() {
       <Route path="/formations" element={<PublicFormationsPage />} />
       <Route path="/evenements" element={<PublicEvenementsPage />} />
       <Route path="/tresorerie" element={<PublicTresoreriePage />} />
+      <Route path="/certificats/verify" element={<CertificateVerifyPage />} />
+      <Route path="/certificats/verify/:number" element={<CertificateVerifyPage />} />
       <Route path="/connexion" element={<ConnexionPage />} />
       <Route path="/inscription" element={<InscriptionPage />} />
 
@@ -46,6 +50,14 @@ export function App() {
         element={
           <ProtectedRoute>
             <FormationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/formations/:formationId/quiz"
+        element={
+          <ProtectedRoute>
+            <FormationQuizPage />
           </ProtectedRoute>
         }
       />

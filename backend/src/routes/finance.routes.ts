@@ -146,6 +146,8 @@ financeRouter.post(
       userId?: string;
       academicYear?: string;
       amount?: number;
+      paymentMethod?: string;
+      paymentPhone?: string;
     };
 
     const academicYear = body.academicYear?.trim() || CURRENT_ACADEMIC_YEAR;
@@ -184,6 +186,14 @@ financeRouter.post(
 
     const receiptNo = await generateReceiptNo(academicYear);
     const paidAt = new Date();
+    const paymentMethod = body.paymentMethod?.trim().toUpperCase() || "SIMULATION";
+    const paymentPhone = body.paymentPhone?.trim() || null;
+    const paymentReference =
+      paymentMethod === "ORANGE_MONEY"
+        ? `OM-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+        : paymentMethod === "MTN_MOMO"
+          ? `MTN-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+          : `SIM-${Date.now()}`;
 
     const cotisation = await prisma.$transaction(async (tx) => {
       const saved = existing
@@ -194,6 +204,9 @@ financeRouter.post(
               status: CotisationStatus.PAID,
               paidAt,
               receiptNo,
+              paymentMethod,
+              paymentPhone,
+              paymentReference,
             },
           })
         : await tx.cotisation.create({
@@ -204,6 +217,9 @@ financeRouter.post(
               paidAt,
               receiptNo,
               academicYear,
+              paymentMethod,
+              paymentPhone,
+              paymentReference,
             },
           });
 

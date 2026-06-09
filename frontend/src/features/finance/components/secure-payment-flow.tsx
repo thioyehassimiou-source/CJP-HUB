@@ -45,8 +45,14 @@ export function SecurePaymentFlow({ embedded = false }: SecurePaymentFlowProps) 
     setPhase("processing");
     window.setTimeout(async () => {
       try {
-        const { cotisation } = await payCotisationRequest(50000);
-        setReference(cotisation.receiptNo ?? "CJP-RCP");
+        const paymentMethod =
+          provider === "orange" ? "ORANGE_MONEY" : provider === "mtn" ? "MTN_MOMO" : "SIMULATION";
+        const { cotisation } = await payCotisationRequest({
+          amount: PAYMENT_SUMMARY.amountValue,
+          paymentMethod,
+          paymentPhone: phone,
+        });
+        setReference(cotisation.paymentReference ?? cotisation.receiptNo ?? "CJP-RCP");
         setPaidAt(formatPaymentDate(new Date()));
         setPhase("success");
       } catch (error) {

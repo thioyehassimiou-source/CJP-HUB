@@ -147,6 +147,28 @@ Comptes seed (après Phase A) :
 
 - Messagerie temps réel, paiement Orange Money, certificats automatiques, notifications push
 
+### Phase G — Profil & messagerie REST ✅
+
+| Livrable | Détail |
+|----------|--------|
+| Profil | `PATCH /api/auth/me`, `PATCH /api/auth/password`, page `/dashboard/parametres` live |
+| Messagerie | Conversations directes + canal annonces, routes `/api/messages/*`, UI dashboard messages |
+
+### Phase H — Quiz, certificats & paiement mobile ✅
+
+| Livrable | Détail |
+|----------|--------|
+| Quiz | Validation formation React, score ≥ 70%, certificat auto |
+| Certificats | Liste membre + vérification publique `/certificats/verify/:number` |
+| Paiement | Métadonnées Orange Money / MTN MoMo sur cotisations |
+| Messagerie | Rafraîchissement auto toutes les 8 s |
+
+### Phase I — à venir
+
+- WebSocket temps réel
+- Intégration Orange Money API réelle
+- Export PDF certificats
+
 ---
 
 *CJP Hub — Université de Labé — 2026*

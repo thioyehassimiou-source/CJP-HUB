@@ -1,5 +1,5 @@
-import { MessagingWorkspace } from "@/features/messaging/components/messaging-workspace";
+import { MessagesApiDashboard } from "@/features/messaging/components/messages-api-dashboard";
 
 export function MessagingConsole() {
-  return <MessagingWorkspace />;
+  return <MessagesApiDashboard />;
 }

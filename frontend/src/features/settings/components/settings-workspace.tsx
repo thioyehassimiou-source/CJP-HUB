@@ -1,5 +1,5 @@
-import { SettingsPanel } from "@/features/settings/components/settings-panel";
+import { CjpSettingsPanel } from "@/features/settings/components/cjp-settings-panel";
 
 export function SettingsWorkspace() {
-  return <SettingsPanel />;
+  return <CjpSettingsPanel />;
 }

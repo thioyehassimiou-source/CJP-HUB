@@ -16,6 +16,7 @@ export type AuthUser = {
   filiere: string;
   niveau: string;
   phone: string;
+  bio?: string | null;
   role: UserRole;
   membership: {
     status: MembershipStatus;
@@ -94,6 +95,62 @@ export type ApiFormation = {
   createdAt: string;
 };
 
+export type ApiFormationDetail = ApiFormation & {
+  quiz: { id: string; title: string; passScore: number } | null;
+  certificate: { number: string; issuedAt: string } | null;
+};
+
+export type ApiQuizQuestion = {
+  id: string;
+  prompt: string;
+  options: string[];
+};
+
+export type ApiQuiz = {
+  id: string;
+  title: string;
+  passScore: number;
+  questions: ApiQuizQuestion[];
+};
+
+export type ApiQuizResult = {
+  passed: boolean;
+  score: number;
+  passScore: number;
+  correctCount: number;
+  totalQuestions: number;
+  certificate: ApiCertificate | null;
+};
+
+export type ApiCertificate = {
+  id: string;
+  number: string;
+  formationId: string;
+  formationTitle: string;
+  formationProgram: string;
+  formationLevel: string;
+  holderName: string;
+  matricule: string;
+  issuedAt: string;
+  verified: boolean;
+};
+
+export type ApiCertificateVerify =
+  | {
+      valid: false;
+      number: string;
+      message: string;
+    }
+  | {
+      valid: true;
+      number: string;
+      holderName: string;
+      matricule: string;
+      formationTitle: string;
+      formationProgram: string;
+      issuedAt: string;
+    };
+
 export type ApiEvent = {
   id: string;
   title: string;
@@ -162,6 +219,15 @@ export type ApiCotisation = {
   academicYear: string;
   paidAt: string | null;
   receiptNo: string | null;
+  paymentMethod: string | null;
+  paymentPhone: string | null;
+  paymentReference: string | null;
+};
+
+export type PayCotisationPayload = {
+  amount?: number;
+  paymentMethod?: "ORANGE_MONEY" | "MTN_MOMO" | "SIMULATION";
+  paymentPhone?: string;
 };
 
 export type CreateFinanceTransactionPayload = {
@@ -220,4 +286,37 @@ export type CreateResourcePayload = {
   category: string;
   fileUrl?: string;
   externalUrl?: string;
+};
+
+export type ConversationType = "DIRECT" | "ANNOUNCEMENT";
+
+export type ApiConversationPreview = {
+  id: string;
+  type: ConversationType;
+  title: string;
+  subtitle: string;
+  otherParticipant: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    initials: string;
+  } | null;
+  lastMessage: {
+    content: string;
+    createdAt: string;
+    senderId: string;
+  } | null;
+};
+
+export type ApiChatMessage = {
+  id: string;
+  content: string;
+  createdAt: string;
+  sent: boolean;
+  sender: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    initials: string;
+  };
 };

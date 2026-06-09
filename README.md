@@ -157,6 +157,30 @@ Le proxy Vite redirige `/api/*` vers Express (`localhost:4000`).
 |---------|-------|------|-------------|
 | GET | `/api/stats/overview` | — | Métriques dashboard (membres, finance, prochain événement…) |
 
+### Profil & messagerie (v2)
+
+| Méthode | Route | Auth | Description |
+|---------|-------|------|-------------|
+| PATCH | `/api/auth/me` | Bearer | Modifier prénom, nom, téléphone, bio |
+| PATCH | `/api/auth/password` | Bearer | Changer le mot de passe |
+| GET | `/api/messages/conversations` | Bearer | Liste des conversations |
+| GET | `/api/messages/conversations/:id/messages` | Bearer | Messages d'une conversation |
+| POST | `/api/messages/conversations/direct` | Membre actif | Ouvrir ou retrouver un message direct |
+| POST | `/api/messages/conversations/:id/messages` | Bearer | Envoyer un message |
+| POST | `/api/messages/announcements` | Admin+ | Publier une annonce officielle |
+
+### Formations — quiz & certificats (v2)
+
+| Méthode | Route | Auth | Description |
+|---------|-------|------|-------------|
+| GET | `/api/formations/:id` | Optionnel | Détail formation + statut certificat |
+| GET | `/api/formations/:id/quiz` | Bearer | Questions du quiz (sans réponses) |
+| POST | `/api/formations/:id/quiz/submit` | Membre actif | Soumettre le quiz, obtenir certificat si réussi |
+| GET | `/api/certificates/me` | Bearer | Certificats de l'utilisateur |
+| GET | `/api/certificates/verify/:number` | — | Vérification publique |
+
+Cotisations : `POST /api/finance/cotisations` accepte `paymentMethod` (`ORANGE_MONEY`, `MTN_MOMO`) et `paymentPhone`.
+
 ## Checklist tests manuels (MVP)
 
 1. **Santé** — `GET /api/health` retourne `ok` et `database: connected`
@@ -171,6 +195,11 @@ Le proxy Vite redirige `/api/*` vers Express (`localhost:4000`).
 10. **Projet** — membre actif crée un projet ; membre `PENDING` reçoit une erreur 403
 11. **Bibliothèque** — import ressource (membre actif) + liste dashboard
 12. **Accueil** — compteurs hero et bandeau stats reflètent le seed
+13. **Profil** — modifier bio/téléphone dans `/dashboard/parametres`, recharger la page
+14. **Messagerie** — lire annonces CJP, envoyer un DM membre actif → membre actif
+15. **Quiz React** — membre actif passe le quiz React (4 questions, 70%) → certificat `CJP-CERT-…`
+16. **Vérification** — `/certificats/verify/CJP-CERT-…` confirme l'authenticité
+17. **Orange Money** — paiement cotisation avec numéro + opérateur enregistre `paymentReference`
 
 Voir le plan détaillé : [`docs/MVP-PLAN.md`](docs/MVP-PLAN.md)
 
