@@ -6,17 +6,17 @@ export type CjpNavItem = {
 export const CJP_PUBLIC_NAV: CjpNavItem[] = [
   { href: "/", label: "ACCUEIL" },
   { href: "/a-propos", label: "À PROPOS" },
+  { href: "/membres", label: "MEMBRES" },
   { href: "/formations", label: "FORMATIONS" },
   { href: "/evenements", label: "ÉVÉNEMENTS" },
-  { href: "/dashboard/projets", label: "PROJETS" },
   { href: "/tresorerie", label: "TRÉSORERIE" },
-  { href: "/dashboard/bibliotheque", label: "BIBLIOTHÈQUE" },
+  { href: "/bibliotheque", label: "BIBLIOTHÈQUE" },
 ];
 
 export function isCjpNavActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   if (href === "/a-propos") return pathname === "/a-propos";
   if (href === "/dashboard/projets") return pathname.startsWith("/dashboard/projets");
-  if (href === "/dashboard/bibliotheque") return pathname.startsWith("/dashboard/bibliotheque");
+  if (href === "/bibliotheque") return pathname.startsWith("/bibliotheque");
   return pathname === href || pathname.startsWith(`${href}/`);
 }

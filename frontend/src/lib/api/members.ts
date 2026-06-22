@@ -1,8 +1,30 @@
 import { apiGet, apiPatch } from "@/lib/api/client";
-import type { ApiMember, ApiPendingMember, ValidateMemberAction } from "@/lib/api/types";
+import type {
+  ApiBureauMember,
+  ApiBureauMandate,
+  ApiMember,
+  ApiPendingMember,
+  ValidateMemberAction,
+} from "@/lib/api/types";
 
 export function fetchMembers() {
   return apiGet<{ members: ApiMember[] }>("/members", false);
+}
+
+export function fetchBureau() {
+  return apiGet<{ bureau: ApiBureauMember[] }>("/members/bureau", false);
+}
+
+export function fetchAnciensBureaux() {
+  return apiGet<{ anciensBureaux: ApiBureauMandate[] }>("/members/anciens-bureaux", false);
+}
+
+export function fetchMonHeritage() {
+  return apiGet<{ eligible: boolean; legacyBio: string | null }>("/members/mon-heritage", true);
+}
+
+export function updateLegacyBio(legacyBio: string) {
+  return apiPatch<{ success: boolean; legacyBio: string }>("/members/mon-heritage", { legacyBio }, true);
 }
 
 export function fetchPendingMembers() {

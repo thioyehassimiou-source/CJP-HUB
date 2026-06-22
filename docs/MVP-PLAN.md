@@ -163,11 +163,11 @@ Comptes seed (après Phase A) :
 | Paiement | Métadonnées Orange Money / MTN MoMo sur cotisations |
 | Messagerie | Rafraîchissement auto toutes les 8 s |
 
-### Phase I — à venir
+### Phase I — en cours
 
-- WebSocket temps réel
-- Intégration Orange Money API réelle
-- Export PDF certificats
+- [x] WebSocket temps réel
+- [ ] Intégration Orange Money API réelle
+- [x] Export PDF certificats
 
 ---
 

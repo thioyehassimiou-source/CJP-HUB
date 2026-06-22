@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import { AuthCallbackPage } from "@/pages/auth-callback-page";
 import { ProtectedRoute } from "@/features/auth/protected-route";
 import { AProposPage } from "@/pages/a-propos-page";
 import { AdminPage } from "@/pages/admin-page";
@@ -19,9 +20,15 @@ import { ParametresPage } from "@/pages/parametres-page";
 import { PublicEvenementsPage } from "@/pages/public-evenements-page";
 import { PublicFormationsPage } from "@/pages/public-formations-page";
 import { PublicTresoreriePage } from "@/pages/public-tresorerie-page";
+import { PublicBibliothequePage } from "@/pages/public-bibliotheque-page";
+import { PublicProjetsPage } from "@/pages/public-projets-page";
 import { PaiementPage } from "@/pages/paiement-page";
 import { ProjetsPage } from "@/pages/projets-page";
 import { TresoreriePage } from "@/pages/tresorerie-page";
+import { FastPassPage } from "@/pages/fast-pass-page";
+import { ScannerPage } from "@/pages/scanner-page";
+import { ClaimCertificatePage } from "@/pages/claim-certificate-page";
+import { CampaignDetailsPage } from "@/pages/campaign-details-page";
 
 export function App() {
   return (
@@ -32,11 +39,16 @@ export function App() {
       <Route path="/formations" element={<PublicFormationsPage />} />
       <Route path="/evenements" element={<PublicEvenementsPage />} />
       <Route path="/tresorerie" element={<PublicTresoreriePage />} />
+      <Route path="/bibliotheque" element={<PublicBibliothequePage />} />
+      <Route path="/projets" element={<PublicProjetsPage />} />
       <Route path="/certificats/verify" element={<CertificateVerifyPage />} />
       <Route path="/certificats/verify/:number" element={<CertificateVerifyPage />} />
       <Route path="/connexion" element={<ConnexionPage />} />
       <Route path="/inscription" element={<InscriptionPage />} />
-
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/pass" element={<FastPassPage />} />
+      <Route path="/scan/:token" element={<ScannerPage />} />
+      <Route path="/claim" element={<ClaimCertificatePage />} />
       <Route
         path="/dashboard"
         element={
@@ -122,6 +134,14 @@ export function App() {
         element={
           <ProtectedRoute>
             <ParametresPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/campaigns/:id"
+        element={
+          <ProtectedRoute>
+            <CampaignDetailsPage />
           </ProtectedRoute>
         }
       />

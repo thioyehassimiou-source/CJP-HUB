@@ -1,4 +1,4 @@
-import { apiGet, apiPost, getAuthToken } from "@/lib/api/client";
+import { apiGet, apiPost, apiPatch, getAuthToken } from "@/lib/api/client";
 import type { ApiEvent, CreateEventPayload } from "@/lib/api/types";
 
 export function fetchEvents(manage = false) {
@@ -12,5 +12,13 @@ export function createEventRequest(payload: CreateEventPayload) {
 }
 
 export function registerForEventRequest(eventId: string) {
-  return apiPost<{ registered: boolean }>(`/events/${eventId}/register`, {}, true);
+  return apiPost<{ registered: boolean; status: import("@/lib/api/types").EventRegistrationStatus }>(`/events/${eventId}/register`, {}, true);
+}
+
+export function validateEventRegistrationRequest(eventId: string, userId: string, action: "approve" | "reject") {
+  return apiPatch<{ success: boolean; status: import("@/lib/api/types").EventRegistrationStatus }>(
+    `/events/${eventId}/registrations/${userId}/validate`,
+    { action },
+    true
+  );
 }

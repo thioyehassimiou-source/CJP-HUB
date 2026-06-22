@@ -85,3 +85,7 @@ export function apiPatch<T>(path: string, body: unknown, auth = true) {
 export async function checkApiHealth() {
   return apiGet<{ status: string; service: string; database?: string }>("/health");
 }
+
+export function apiDelete<T = void>(path: string, auth = true) {
+  return apiRequest<T>(path, { method: "DELETE", auth });
+}

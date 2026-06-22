@@ -30,7 +30,17 @@ async function generateReceiptNo(academicYear: string) {
 
 financeRouter.get(
   "/summary",
-  asyncHandler(async (_req, res) => {
+  requireAuth,
+  asyncHandler(async (req: AuthRequest, res) => {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { membership: true }
+    });
+
+    if (user?.membership?.status !== "ACTIVE") {
+      throw new ApiError(403, "Accès réservé aux membres actifs");
+    }
+
     const [transactions, paidCotisations] = await Promise.all([
       prisma.transaction.findMany({ orderBy: { transactionAt: "asc" } }),
       prisma.cotisation.aggregate({
@@ -59,7 +69,17 @@ financeRouter.get(
 
 financeRouter.get(
   "/transactions",
-  asyncHandler(async (_req, res) => {
+  requireAuth,
+  asyncHandler(async (req: AuthRequest, res) => {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { membership: true }
+    });
+
+    if (user?.membership?.status !== "ACTIVE") {
+      throw new ApiError(403, "Accès réservé aux membres actifs");
+    }
+
     const transactions = await prisma.transaction.findMany({
       orderBy: { transactionAt: "desc" },
     });

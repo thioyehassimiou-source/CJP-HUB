@@ -12,6 +12,7 @@ export function toPublicMessage(
 ) {
   return {
     id: message.id,
+    conversationId: message.conversationId,
     content: message.content,
     createdAt: message.createdAt.toISOString(),
     sent: message.senderId === currentUserId,

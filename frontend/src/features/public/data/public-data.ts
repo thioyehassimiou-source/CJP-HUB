@@ -1,10 +1,3 @@
-export const HOME_STATS = [
-  { value: "120+", label: "Membres actifs" },
-  { value: "24", label: "Formations" },
-  { value: "50+", label: "Certifications" },
-  { value: "18", label: "Projets" },
-] as const;
-
 export const HOME_POLES = [
   {
     id: "membres",
@@ -40,7 +33,7 @@ export const HOME_POLES = [
     id: "bibliotheque",
     title: "Bibliothèque",
     description: "Ressources partagées et archives du club.",
-    href: "/dashboard/bibliotheque",
+    href: "/bibliotheque",
   },
 ] as const;
 

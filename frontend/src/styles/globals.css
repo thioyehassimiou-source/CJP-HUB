@@ -212,6 +212,130 @@
     animation: pulse-soft 2s infinite ease-in-out;
   }
 
+  @keyframes cjp-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes cjp-scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes cjp-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  .cjp-anim-fade-up {
+    opacity: 0;
+    animation: cjp-fade-up 0.7s ease-out forwards;
+  }
+
+  .cjp-anim-scale-in {
+    opacity: 0;
+    animation: cjp-scale-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .cjp-anim-float {
+    animation: cjp-float 5s ease-in-out infinite;
+  }
+
+  .cjp-anim-delay-1 {
+    animation-delay: 0.1s;
+  }
+
+  .cjp-anim-delay-2 {
+    animation-delay: 0.25s;
+  }
+
+  .cjp-anim-delay-3 {
+    animation-delay: 0.4s;
+  }
+
+  .cjp-anim-delay-4 {
+    animation-delay: 0.55s;
+  }
+
+  .cjp-anim-delay-5 {
+    animation-delay: 0.7s;
+  }
+
+  .cjp-particle {
+    position: absolute;
+    border-radius: 999px;
+    opacity: 0;
+    animation-name: cjp-particle-rise;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    will-change: transform, opacity;
+  }
+
+  .cjp-particle-gold {
+    background: var(--cjp-gold);
+    box-shadow: 0 0 6px rgba(245, 166, 35, 0.55);
+  }
+
+  .cjp-particle-white {
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.35);
+  }
+
+  .cjp-particle-dim {
+    background: rgba(245, 166, 35, 0.35);
+  }
+
+  @keyframes cjp-particle-rise {
+    0% {
+      transform: translate(0, 0);
+      opacity: 0;
+    }
+    12% {
+      opacity: 0.85;
+    }
+    88% {
+      opacity: 0.85;
+    }
+    100% {
+      transform: translate(var(--cjp-particle-drift, 0px), -45vh);
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cjp-anim-fade-up,
+    .cjp-anim-scale-in {
+      animation-duration: 0.01ms;
+      animation-delay: 0s;
+    }
+
+    .cjp-anim-float {
+      animation: none;
+    }
+
+    .cjp-particle {
+      animation: none;
+      opacity: 0.3;
+    }
+  }
+
   .bento-grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
@@ -241,6 +365,29 @@
   .cjp-navbar {
     background: var(--cjp-black);
     border-bottom: 1px solid var(--cjp-border);
+    transition:
+      background 0.3s ease,
+      box-shadow 0.3s ease,
+      backdrop-filter 0.3s ease;
+  }
+
+  .cjp-navbar-scrolled {
+    background: color-mix(in srgb, var(--cjp-black) 82%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  }
+
+  .cjp-scroll-progress {
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    background: linear-gradient(90deg, var(--cjp-gold), var(--cjp-gold-dark));
+    transform-origin: left;
+    transition: transform 0.1s linear;
+    pointer-events: none;
   }
 
   .cjp-logo-mark {
@@ -258,6 +405,7 @@
   }
 
   .cjp-nav-link {
+    position: relative;
     font-size: 0.7rem;
     font-weight: 500;
     letter-spacing: var(--cjp-letter-nav);
@@ -266,12 +414,32 @@
     transition: color 0.2s;
   }
 
+  .cjp-nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -5px;
+    height: 1.5px;
+    width: 100%;
+    background: var(--cjp-gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+
   .cjp-nav-link:hover,
   .cjp-nav-link-active {
     color: var(--cjp-gold);
   }
 
+  .cjp-nav-link:hover::after,
+  .cjp-nav-link-active::after {
+    transform: scaleX(1);
+  }
+
   .btn-cjp {
+    position: relative;
+    overflow: hidden;
     display: inline-flex;
     align-items: center;
     gap: 0.75rem;
@@ -283,15 +451,21 @@
     letter-spacing: var(--cjp-letter-btn);
     text-transform: uppercase;
     color: var(--cjp-black);
-    transition: background 0.2s, transform 0.15s;
+    transition:
+      background 0.2s,
+      transform 0.2s ease,
+      box-shadow 0.25s ease;
   }
 
   .btn-cjp:hover {
     background: var(--cjp-gold-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(245, 166, 35, 0.28);
   }
 
   .btn-cjp:active {
-    transform: scale(0.97);
+    transform: translateY(0) scale(0.96);
+    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.18);
   }
 
   .cjp-btn-arrow {
@@ -306,6 +480,8 @@
   }
 
   .btn-cjp-outline {
+    position: relative;
+    overflow: hidden;
     display: inline-flex;
     align-items: center;
     gap: 0.625rem;
@@ -316,11 +492,46 @@
     letter-spacing: var(--cjp-letter-btn);
     text-transform: uppercase;
     color: var(--cjp-white);
-    transition: color 0.2s;
+    transition:
+      color 0.2s,
+      transform 0.2s ease;
   }
 
   .btn-cjp-outline:hover {
     color: var(--cjp-gold);
+    transform: translateY(-1px);
+  }
+
+  .btn-cjp-outline:active {
+    transform: scale(0.96);
+  }
+
+  .cjp-ripple {
+    position: absolute;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.16);
+    transform: scale(0);
+    animation: cjp-ripple 0.6s ease-out forwards;
+    pointer-events: none;
+  }
+
+  .cjp-ripple-gold {
+    background: rgba(245, 166, 35, 0.22);
+  }
+
+  @keyframes cjp-ripple {
+    to {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+
+  .cjp-press {
+    transition: transform 0.15s ease;
+  }
+
+  .cjp-press:active {
+    transform: scale(0.98);
   }
 
   .cjp-display-title {
@@ -549,6 +760,12 @@
 
 .material-symbols-outlined.filled {
   font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {

@@ -1,11 +1,9 @@
 import { FormEvent, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AuthSplitLayout } from "@/components/layout/auth-split-layout";
 import { useAuth } from "@/features/auth/auth-context";
 import { Icon } from "@/components/ui/icon";
 import {
-  authFieldClass,
-  authLabelClass,
   authLinkClass,
   authSocialClass,
   authSubmitClass,
@@ -20,12 +18,17 @@ type SubmitState = "idle" | "loading" | "success" | "error";
 export function ConnexionPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, user, loading } = useAuth();
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   const redirectTo =
     (location.state as { from?: string } | null)?.from ?? "/dashboard";
+
+  // Si l'utilisateur est déjà connecté, le rediriger directement
+  if (!loading && user) {
+    return <Navigate to={redirectTo} replace />;
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,7 +44,8 @@ export function ConnexionPage() {
     try {
       await login(email, password);
       setSubmitState("success");
-      window.setTimeout(() => navigate(redirectTo, { replace: true }), 600);
+      // Naviguer immédiatement sans délai
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       setSubmitState("error");
       setErrorMessage(
@@ -72,49 +76,53 @@ export function ConnexionPage() {
           </p>
         ) : null}
 
-        <div>
-          <label htmlFor="email" className={authLabelClass}>
+        <div className="relative group">
+          <Icon
+            name="alternate_email"
+            className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-[var(--cjp-text-muted)] transition-colors group-focus-within:text-[var(--cjp-gold)]"
+          />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            defaultValue="admin@cjp.ul.edu.gn"
+            placeholder=" "
+            className="peer w-full rounded-xl border border-[color-mix(in_srgb,var(--cjp-border)_35%,#ccc)] bg-white pb-2 pl-12 pr-4 pt-6 text-sm text-[var(--cjp-black)] outline-none transition-all focus:border-[var(--cjp-gold)] focus:ring-2 focus:ring-[var(--cjp-gold)]/20"
+          />
+          <label
+            htmlFor="email"
+            className="pointer-events-none absolute left-12 top-4 -translate-y-1/2 cursor-text select-none text-xs text-[var(--cjp-text-muted)] transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-4 peer-focus:text-xs peer-focus:text-[var(--cjp-gold-dark)]"
+          >
             E-mail universitaire
           </label>
-          <div className="relative">
-            <Icon
-              name="alternate_email"
-              className="absolute top-1/2 left-4 -translate-y-1/2 text-[var(--cjp-text-muted)]"
-            />
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              defaultValue="admin@cjp.ul.edu.gn"
-              placeholder="nom.prenom@universite.edu"
-              className={cn(authFieldClass, "pl-12")}
-            />
-          </div>
         </div>
 
         <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label htmlFor="password" className={authLabelClass}>
-              Mot de passe
-            </label>
+          <div className="mb-2 flex items-center justify-end">
             <Link to="/connexion" className={authLinkClass}>
               Mot de passe oublié ?
             </Link>
           </div>
-          <div className="relative">
+          <div className="relative group">
             <Icon
               name="lock"
-              className="absolute top-1/2 left-4 -translate-y-1/2 text-[var(--cjp-text-muted)]"
+              className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-[var(--cjp-text-muted)] transition-colors group-focus-within:text-[var(--cjp-gold)]"
             />
             <input
               id="password"
               name="password"
               type="password"
               required
-              placeholder="••••••••"
-              className={cn(authFieldClass, "pl-12")}
+              placeholder=" "
+              className="peer w-full rounded-xl border border-[color-mix(in_srgb,var(--cjp-border)_35%,#ccc)] bg-white pb-2 pl-12 pr-4 pt-6 text-sm text-[var(--cjp-black)] outline-none transition-all focus:border-[var(--cjp-gold)] focus:ring-2 focus:ring-[var(--cjp-gold)]/20"
             />
+            <label
+              htmlFor="password"
+              className="pointer-events-none absolute left-12 top-4 -translate-y-1/2 cursor-text select-none text-xs text-[var(--cjp-text-muted)] transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-4 peer-focus:text-xs peer-focus:text-[var(--cjp-gold-dark)]"
+            >
+              Mot de passe
+            </label>
           </div>
         </div>
 
@@ -129,35 +137,39 @@ export function ConnexionPage() {
           </label>
         </div>
 
-        <button
-          type="submit"
-          disabled={submitState === "loading" || submitState === "success"}
-          className={cn(
-            authSubmitClass,
-            submitState === "success" && "!bg-[var(--cjp-black)] !text-[var(--cjp-gold)]",
-          )}
-        >
-          {submitState === "loading" && (
-            <>
-              <Icon name="sync" className="animate-spin" />
-              Connexion...
-            </>
-          )}
-          {submitState === "success" && (
-            <>
-              <Icon name="check_circle" />
-              Bienvenue !
-            </>
-          )}
-          {submitState === "idle" || submitState === "error" ? (
-            <>
-              Se connecter
-              <span className="cjp-btn-arrow">
-                <Icon name="arrow_forward" className="text-base" />
-              </span>
-            </>
-          ) : null}
-        </button>
+        <div className="relative group">
+          <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-[var(--cjp-gold)] to-yellow-300 opacity-0 blur transition duration-500 group-hover:opacity-30" />
+          <button
+            type="submit"
+            disabled={submitState === "loading" || submitState === "success"}
+            className={cn(
+              authSubmitClass,
+              "relative overflow-hidden transition-all duration-300",
+              submitState === "success" && "!bg-[var(--cjp-black)] !text-[var(--cjp-gold)]",
+            )}
+          >
+            {submitState === "loading" && (
+              <>
+                <Icon name="sync" className="mr-2 animate-spin" />
+                Connexion en cours...
+              </>
+            )}
+            {submitState === "success" && (
+              <div className="flex animate-[slide-up_0.3s_ease-out] items-center gap-2">
+                <Icon name="check_circle" />
+                Bienvenue !
+              </div>
+            )}
+            {submitState === "idle" || submitState === "error" ? (
+              <>
+                Se connecter
+                <span className="cjp-btn-arrow transition-transform duration-300 group-hover:translate-x-1">
+                  <Icon name="arrow_forward" className="text-base" />
+                </span>
+              </>
+            ) : null}
+          </button>
+        </div>
       </form>
 
       <div className="mt-6 flex items-center gap-4">
@@ -169,12 +181,20 @@ export function ConnexionPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3">
-        <button type="button" className={authSocialClass}>
-          <img alt="Google" className="h-5 w-5 opacity-80" src={GOOGLE_LOGO} />
+        <button 
+          type="button" 
+          onClick={() => { window.location.href = "/api/auth/google"; }}
+          className={cn(authSocialClass, "hover:-translate-y-0.5 hover:shadow-md transition-all duration-300")}
+        >
+          <img alt="Google" className="h-5 w-5 opacity-80 group-hover:opacity-100 transition-opacity" src={GOOGLE_LOGO} />
           Google
         </button>
-        <button type="button" className={authSocialClass}>
-          <Icon name="terminal" className="text-[var(--cjp-text-muted)]" />
+        <button 
+          type="button" 
+          onClick={() => { window.location.href = "/api/auth/github"; }}
+          className={cn(authSocialClass, "hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group")}
+        >
+          <Icon name="terminal" className="text-[var(--cjp-text-muted)] group-hover:text-[var(--cjp-gold-dark)] transition-colors" />
           GitHub
         </button>
       </div>

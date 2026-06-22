@@ -1,10 +1,45 @@
 import { useEffect, useState } from "react";
-import { Award } from "lucide-react";
+import { Award, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/features/auth/auth-context";
 import { fetchMyCertificates } from "@/lib/api/certificates";
 import { ApiClientError } from "@/lib/api/client";
 import type { ApiCertificate } from "@/lib/api/types";
+import { exportCertificateToPDF } from "@/features/doc-gen/components/certificate-pdf-exporter";
+
+function DownloadCertificateButton({ certificate }: { certificate: ApiCertificate }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleDownload = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      await exportCertificateToPDF({
+        memberName: certificate.holderName,
+        training: certificate.formationTitle,
+        issueDate: certificate.issuedAt,
+        certificateNumber: `REF: #${certificate.number}`,
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleDownload}
+      disabled={loading}
+      className="mt-3 ml-4 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-[var(--cjp-gold)] hover:underline disabled:opacity-50"
+    >
+      {loading ? <span className="animate-spin">⏳</span> : <Download className="h-3 w-3" />}
+      {loading ? "Génération..." : "PDF"}
+    </button>
+  );
+}
+
 
 export function CertificatesPanel() {
   const { user } = useAuth();
@@ -72,6 +107,7 @@ export function CertificatesPanel() {
                   >
                     Vérifier
                   </Link>
+                  <DownloadCertificateButton certificate={certificate} />
                 </div>
               </div>
             </article>

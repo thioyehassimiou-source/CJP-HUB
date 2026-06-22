@@ -44,14 +44,15 @@ export function CjpEvenementsPage() {
     setActionMessage("");
 
     try {
-      await registerForEventRequest(eventId);
-      setActionMessage("Inscription enregistrée avec succès.");
+      const response = await registerForEventRequest(eventId);
+      setActionMessage("Demande de participation enregistrée. En attente de validation.");
       setEvents((current) =>
         current.map((event) =>
           event.id === eventId
             ? {
                 ...event,
                 registered: true,
+                registrationStatus: response.status,
                 registrationCount: event.registrationCount + 1,
                 spotsLeft: Math.max(event.spotsLeft - 1, 0),
               }
@@ -132,9 +133,13 @@ export function CjpEvenementsPage() {
                   <div>
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="cjp-badge-gold">{event.typeLabel}</span>
-                      {event.registered ? (
+                      {event.registrationStatus === "APPROVED" ? (
                         <span className="text-xs font-semibold uppercase tracking-wider text-green-700">
                           Inscrit
+                        </span>
+                      ) : event.registrationStatus === "PENDING" ? (
+                        <span className="text-xs font-semibold uppercase tracking-wider text-orange-500">
+                          En attente
                         </span>
                       ) : null}
                     </div>
@@ -158,12 +163,16 @@ export function CjpEvenementsPage() {
                       <CjpButton to="/connexion" className="!py-3 !text-xs">
                         SE CONNECTER POUR S&apos;INSCRIRE
                       </CjpButton>
-                    ) : event.registered ? (
+                    ) : event.registrationStatus === "APPROVED" ? (
                       <span className="cjp-detail-link w-fit cursor-default opacity-70">
                         DÉJÀ INSCRIT
                         <span className="cjp-detail-arrow">
                           <ArrowRight className="h-3.5 w-3.5" />
                         </span>
+                      </span>
+                    ) : event.registrationStatus === "PENDING" ? (
+                      <span className="cjp-detail-link w-fit cursor-default text-orange-600 opacity-90">
+                        EN ATTENTE DE VALIDATION
                       </span>
                     ) : event.spotsLeft === 0 ? (
                       <span className="text-sm font-semibold uppercase tracking-wider text-[var(--cjp-text-muted)]">
@@ -183,7 +192,7 @@ export function CjpEvenementsPage() {
                         onClick={() => handleRegister(event.id)}
                         className="cjp-detail-link w-fit disabled:opacity-50"
                       >
-                        {registeringId === event.id ? "INSCRIPTION…" : "S'inscrire"}
+                        {registeringId === event.id ? "DEMANDE…" : "Demander une place"}
                         <span className="cjp-detail-arrow">
                           <ArrowRight className="h-3.5 w-3.5" />
                         </span>

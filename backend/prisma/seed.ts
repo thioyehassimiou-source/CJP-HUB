@@ -30,6 +30,7 @@ async function main() {
       phone: "+224620000000",
       bio: "Président du CJP — passionné par l'open source et la formation des étudiants en informatique.",
       role: Role.ADMINISTRATEUR,
+      bureauTitle: "Coordinateur",
       membership: {
         create: {
           status: MembershipStatus.ACTIVE,
@@ -43,7 +44,7 @@ async function main() {
 
   const member = await prisma.user.upsert({
     where: { email: "membre@cjp.ul.edu.gn" },
-    update: {},
+    update: { role: Role.MEMBRE },
     create: {
       email: "membre@cjp.ul.edu.gn",
       passwordHash: memberHash,
@@ -65,6 +66,7 @@ async function main() {
       },
     },
   });
+
 
   await prisma.user.upsert({
     where: { email: "pending@cjp.ul.edu.gn" },
@@ -357,7 +359,8 @@ async function main() {
 
   console.log("Seed terminé.");
   console.log("Admin:", admin.email, "/ admin123");
-  console.log("Membre:", member.email, "/ membre123");
+  console.log("Membre 1:", member.email, "/ membre123");
+
   console.log("Annonces:", announcement.id);
   console.log("Conversation directe:", directConversation.id);
 }

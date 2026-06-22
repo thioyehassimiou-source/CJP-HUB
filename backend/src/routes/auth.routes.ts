@@ -8,8 +8,150 @@ import { toPublicUser } from "../lib/user-public";
 import { validateRegistrationFields } from "../lib/university-rules";
 import { asyncHandler } from "../middleware/async-handler";
 import { type AuthRequest, requireAuth } from "../middleware/auth";
+import {
+  generateState,
+  getGoogleAuthUrl,
+  getGoogleOAuthTokens,
+  getGoogleUser,
+  getGithubAuthUrl,
+  getGithubOAuthTokens,
+  getGithubUser,
+} from "../lib/oauth";
 
 export const authRouter = Router();
+
+// === OAUTH ROUTES ===
+
+authRouter.get("/google", (req, res) => {
+  const state = generateState();
+  // Optional: store state in a cookie to verify it in the callback
+  const url = getGoogleAuthUrl(state);
+  res.redirect(url);
+});
+
+authRouter.get("/google/callback", asyncHandler(async (req, res) => {
+  const code = req.query.code as string;
+  const state = req.query.state as string;
+
+  if (!code) {
+    throw new ApiError(400, "Code OAuth manquant");
+  }
+
+  const tokens = await getGoogleOAuthTokens({ code });
+  const googleUser = await getGoogleUser(tokens.id_token, tokens.access_token);
+
+  if (!googleUser.verified_email) {
+    throw new ApiError(403, "L'email Google n'est pas vérifié");
+  }
+
+  // Find existing user by email or googleId
+  let user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { googleId: googleUser.id },
+        { email: googleUser.email.toLowerCase() },
+      ],
+    },
+    include: { membership: true },
+  });
+
+  if (user) {
+    // If found by email but no googleId, link them
+    if (!user.googleId) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { googleId: googleUser.id },
+        include: { membership: true },
+      });
+    }
+  } else {
+    // Create new user
+    user = await prisma.user.create({
+      data: {
+        email: googleUser.email.toLowerCase(),
+        googleId: googleUser.id,
+        firstName: googleUser.given_name || googleUser.name || "Utilisateur",
+        lastName: googleUser.family_name || "",
+        role: Role.MEMBRE,
+      },
+      include: { membership: true },
+    });
+  }
+
+  const token = signToken(user.id, user.role);
+
+  // Redirect to frontend with token
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+}));
+
+authRouter.get("/github", (req, res) => {
+  const state = generateState();
+  const url = getGithubAuthUrl(state);
+  res.redirect(url);
+});
+
+authRouter.get("/github/callback", asyncHandler(async (req, res) => {
+  const code = req.query.code as string;
+  const state = req.query.state as string;
+
+  if (!code) {
+    throw new ApiError(400, "Code OAuth manquant");
+  }
+
+  const tokens = await getGithubOAuthTokens({ code });
+  const githubUser = await getGithubUser(tokens.access_token);
+
+  if (!githubUser.email) {
+    throw new ApiError(400, "Aucun email public trouvé sur GitHub");
+  }
+
+  let user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { githubId: githubUser.id.toString() },
+        { email: githubUser.email.toLowerCase() },
+      ],
+    },
+    include: { membership: true },
+  });
+
+  if (user) {
+    if (!user.githubId) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { githubId: githubUser.id.toString() },
+        include: { membership: true },
+      });
+    }
+  } else {
+    let firstName = "Utilisateur";
+    let lastName = "GitHub";
+    if (githubUser.name) {
+      const parts = githubUser.name.split(" ");
+      firstName = parts[0] || firstName;
+      lastName = parts.slice(1).join(" ") || lastName;
+    } else {
+      firstName = githubUser.login;
+    }
+
+    user = await prisma.user.create({
+      data: {
+        email: githubUser.email.toLowerCase(),
+        githubId: githubUser.id.toString(),
+        firstName,
+        lastName,
+        role: Role.MEMBRE,
+      },
+      include: { membership: true },
+    });
+  }
+
+  const token = signToken(user.id, user.role);
+
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+}));
 
 authRouter.post(
   "/login",
@@ -29,7 +171,7 @@ authRouter.post(
       throw new ApiError(401, "Identifiants incorrects");
     }
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
+    const valid = await bcrypt.compare(password, user.passwordHash ?? "");
     if (!valid) {
       throw new ApiError(401, "Identifiants incorrects");
     }
@@ -226,7 +368,7 @@ authRouter.patch(
       throw new ApiError(404, "Utilisateur introuvable");
     }
 
-    const valid = await bcrypt.compare(body.currentPassword, user.passwordHash);
+    const valid = await bcrypt.compare(body.currentPassword, user.passwordHash ?? "");
     if (!valid) {
       throw new ApiError(401, "Mot de passe actuel incorrect");
     }

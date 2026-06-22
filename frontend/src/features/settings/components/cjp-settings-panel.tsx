@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Lock, LogOut, Save, User } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { updatePasswordRequest, updateProfileRequest } from "@/lib/api/auth";
+import { fetchMonHeritage, updateLegacyBio } from "@/lib/api/members";
 import { ApiClientError } from "@/lib/api/client";
 import { ROLE_LABELS } from "@/lib/roles";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,9 @@ export function CjpSettingsPanel() {
   const [newPassword, setNewPassword] = useState("");
   const [profileState, setProfileState] = useState<SaveState>("idle");
   const [passwordState, setPasswordState] = useState<SaveState>("idle");
+  const [legacyBio, setLegacyBio] = useState("");
+  const [heritageEligible, setHeritageEligible] = useState(false);
+  const [heritageState, setHeritageState] = useState<SaveState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -44,6 +48,13 @@ export function CjpSettingsPanel() {
     setLastName(user.lastName);
     setPhone(user.phone);
     setBio(user.bio ?? "");
+    
+    fetchMonHeritage()
+      .then((data) => {
+        setHeritageEligible(data.eligible);
+        if (data.legacyBio) setLegacyBio(data.legacyBio);
+      })
+      .catch(() => {});
   }, [user]);
 
   if (!user) {
@@ -100,6 +111,25 @@ export function CjpSettingsPanel() {
         error instanceof ApiClientError ? error.message : "Modification impossible",
       );
       setPasswordState("idle");
+    }
+  };
+
+  const handleHeritageSave = async (event: FormEvent) => {
+    event.preventDefault();
+    if (heritageState !== "idle") return;
+
+    setHeritageState("saving");
+    setErrorMessage("");
+
+    try {
+      await updateLegacyBio(legacyBio);
+      setHeritageState("saved");
+      window.setTimeout(() => setHeritageState("idle"), 2000);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof ApiClientError ? error.message : "Modification impossible",
+      );
+      setHeritageState("idle");
     }
   };
 
@@ -235,6 +265,54 @@ export function CjpSettingsPanel() {
           </button>
         </div>
       </form>
+
+      {heritageEligible && (
+        <form onSubmit={handleHeritageSave} className="cjp-card-dark space-y-6 p-6">
+          <div className="flex items-center gap-3 border-b border-[var(--cjp-border)] pb-4">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--cjp-gold)] text-xs font-bold text-[var(--cjp-black)]">
+              H
+            </span>
+            <h3 className="text-lg font-bold text-[var(--cjp-white)]">Mon Héritage CJP</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-[var(--cjp-text-muted)]">
+              En tant qu'ancien membre du bureau, vous pouvez mettre à jour votre biographie historique qui apparaîtra sur la page <strong className="text-[var(--cjp-gold)]">À propos</strong> dans la section <strong className="text-[var(--cjp-gold)]">Notre Héritage</strong>. Partagez ce que vous êtes devenu !
+            </p>
+            <div className="space-y-2">
+              <label htmlFor="legacyBio" className="text-xs font-semibold uppercase tracking-wider text-[var(--cjp-text-muted)]">
+                Biographie Historique
+              </label>
+              <textarea
+                id="legacyBio"
+                rows={4}
+                value={legacyBio}
+                onChange={(event) => setLegacyBio(event.target.value)}
+                className={FIELD_CLASS}
+                placeholder="Ex: Ingénieur Logiciel chez TechCorp. Fier d'avoir contribué à l'organisation du premier Hackathon du CJP..."
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={heritageState !== "idle"}
+              className={cn(
+                "btn-cjp inline-flex items-center gap-2 !py-3 !text-xs",
+                heritageState === "saved" && "!bg-[var(--cjp-gold-dark)]",
+              )}
+            >
+              <Save className="h-4 w-4" />
+              {heritageState === "saving"
+                ? "Enregistrement…"
+                : heritageState === "saved"
+                  ? "Héritage enregistré"
+                  : "Mettre à jour mon héritage"}
+            </button>
+          </div>
+        </form>
+      )}
 
       <form onSubmit={handlePasswordSave} className="cjp-card-dark space-y-6 p-6">
         <div className="flex items-center gap-3 border-b border-[var(--cjp-border)] pb-4">

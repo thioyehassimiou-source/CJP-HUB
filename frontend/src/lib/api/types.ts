@@ -57,6 +57,35 @@ export type ApiPendingMember = {
 
 export type ValidateMemberAction = "approve" | "reject";
 
+export type ApiBureauMember = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  role: "RESPONSABLE" | "TRESORIER" | "FORMATEUR" | "ADMINISTRATEUR";
+  bio: string | null;
+  filiere: string;
+  bureauTitle: string | null;
+  initials: string;
+};
+
+export type ApiBureauMandate = {
+  id: string;
+  academicYear: string;
+  role: string;
+  bureauTitle: string | null;
+  legacyBio: string | null;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    initials: string;
+  };
+};
+
+export type UpdateLegacyBioPayload = {
+  legacyBio: string;
+};
+
 export type StatsOverview = {
   activeMembers: number;
   pendingMembers: number;
@@ -151,6 +180,26 @@ export type ApiCertificateVerify =
       issuedAt: string;
     };
 
+export type EventRegistrationStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type ApiEventRegistration = {
+  id: string;
+  userId: string;
+  status: EventRegistrationStatus;
+  createdAt: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    matricule: string;
+    filiere: string;
+    niveau: string;
+    initials: string;
+    membershipStatus: MembershipStatus;
+  };
+};
+
 export type ApiEvent = {
   id: string;
   title: string;
@@ -168,6 +217,8 @@ export type ApiEvent = {
   registrationCount: number;
   spotsLeft: number;
   registered: boolean;
+  registrationStatus?: EventRegistrationStatus;
+  registrations?: ApiEventRegistration[];
 };
 
 export type CreateFormationPayload = {
@@ -269,13 +320,39 @@ export type CreateProjectPayload = {
   status?: "DRAFT" | "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
 };
 
+export type ResourceType =
+  | "PDF"
+  | "COURS"
+  | "PRESENTATION"
+  | "VIDEO"
+  | "TUTORIEL"
+  | "YOUTUBE"
+  | "COURSERA"
+  | "UDEMY"
+  | "GITHUB"
+  | "ARTICLE"
+  | "DOCUMENTATION"
+  | "EBOOK"
+  | "COMMUNAUTE";
+
+export type ResourceLevel = "DEBUTANT" | "INTERMEDIAIRE" | "AVANCE";
+
 export type ApiResource = {
   id: string;
   title: string;
   description: string | null;
+  type: ResourceType;
   category: string;
+  subCategory: string | null;
+  author: string | null;
   fileUrl: string | null;
   externalUrl: string | null;
+  coverUrl: string | null;
+  level: ResourceLevel;
+  tags: string[];
+  viewCount: number;
+  favoriteCount: number;
+  isFavorite: boolean;
   uploadedBy: string;
   createdAt: string;
 };
@@ -283,9 +360,15 @@ export type ApiResource = {
 export type CreateResourcePayload = {
   title: string;
   description?: string;
+  type: ResourceType;
   category: string;
+  subCategory?: string;
+  author?: string;
   fileUrl?: string;
   externalUrl?: string;
+  coverUrl?: string;
+  level?: ResourceLevel;
+  tags?: string[];
 };
 
 export type ConversationType = "DIRECT" | "ANNOUNCEMENT";
@@ -310,6 +393,7 @@ export type ApiConversationPreview = {
 
 export type ApiChatMessage = {
   id: string;
+  conversationId: string;
   content: string;
   createdAt: string;
   sent: boolean;

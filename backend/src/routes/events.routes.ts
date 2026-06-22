@@ -20,24 +20,39 @@ eventsRouter.get(
     const events = await prisma.event.findMany({
       where: canManage ? undefined : { published: true },
       include: {
-        _count: { select: { registrations: true } },
+        _count: {
+          select: { registrations: { where: { status: { in: ["PENDING", "APPROVED"] } } } },
+        },
+        ...(canManage && {
+          registrations: {
+            include: {
+              user: {
+                include: { membership: true },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+        }),
       },
       orderBy: { startAt: "asc" },
     });
 
-    let registeredEventIds = new Set<string>();
+    let userRegistrations = new Map<string, string>();
 
     if (req.user) {
       const registrations = await prisma.eventRegistration.findMany({
         where: { userId: req.user.id },
-        select: { eventId: true },
+        select: { eventId: true, status: true },
       });
-      registeredEventIds = new Set(registrations.map((row) => row.eventId));
+      userRegistrations = new Map(registrations.map((row) => [row.eventId, row.status]));
     }
 
     res.json({
       events: events.map((event) =>
-        toPublicEvent(event, { registered: registeredEventIds.has(event.id) }),
+        toPublicEvent(event, { 
+          registered: userRegistrations.has(event.id),
+          registrationStatus: userRegistrations.get(event.id)
+        }),
       ),
     });
   }),
@@ -101,7 +116,11 @@ eventsRouter.post(
         posterUrl: body.posterUrl?.trim() || null,
         published: body.published ?? true,
       },
-      include: { _count: { select: { registrations: true } } },
+      include: {
+        _count: {
+          select: { registrations: { where: { status: { in: ["PENDING", "APPROVED"] } } } },
+        },
+      },
     });
 
     res.status(201).json({ event: toPublicEvent(event) });
@@ -129,7 +148,11 @@ eventsRouter.post(
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      include: { _count: { select: { registrations: true } } },
+      include: {
+        _count: {
+          select: { registrations: { where: { status: { in: ["PENDING", "APPROVED"] } } } },
+        },
+      },
     });
 
     if (!event || !event.published) {
@@ -150,13 +173,44 @@ eventsRouter.post(
       throw new ApiError(409, "Vous êtes déjà inscrit à cet événement");
     }
 
-    await prisma.eventRegistration.create({
+    const registration = await prisma.eventRegistration.create({
       data: {
         eventId,
         userId: req.user!.id,
       },
     });
 
-    res.status(201).json({ registered: true });
+    res.status(201).json({ registered: true, status: registration.status });
+  }),
+);
+
+eventsRouter.patch(
+  "/:eventId/registrations/:userId/validate",
+  requireAuth,
+  requireRole(...PERMISSIONS.manageEvents),
+  asyncHandler(async (req: AuthRequest, res) => {
+    const { eventId, userId } = req.params;
+    const body = req.body as { action?: "approve" | "reject" };
+
+    if (!body.action || !["approve", "reject"].includes(body.action)) {
+      throw new ApiError(400, "Action invalide. Utilisez 'approve' ou 'reject'");
+    }
+
+    const registration = await prisma.eventRegistration.findUnique({
+      where: { eventId_userId: { eventId: String(eventId), userId: String(userId) } },
+    });
+
+    if (!registration) {
+      throw new ApiError(404, "Inscription introuvable");
+    }
+
+    const status = body.action === "approve" ? "APPROVED" : "REJECTED";
+
+    await prisma.eventRegistration.update({
+      where: { id: registration.id },
+      data: { status },
+    });
+
+    res.json({ success: true, status });
   }),
 );

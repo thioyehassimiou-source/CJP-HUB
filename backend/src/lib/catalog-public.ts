@@ -22,8 +22,11 @@ export function toPublicFormation(formation: Formation) {
 }
 
 export function toPublicEvent(
-  event: Event & { _count?: { registrations: number } },
-  options?: { registered?: boolean },
+  event: Event & { 
+    _count?: { registrations: number };
+    registrations?: Array<any>;
+  },
+  options?: { registered?: boolean; registrationStatus?: string },
 ) {
   const registrationCount = event._count?.registrations ?? 0;
 
@@ -44,5 +47,25 @@ export function toPublicEvent(
     registrationCount,
     spotsLeft: Math.max(event.maxPlaces - registrationCount, 0),
     registered: options?.registered ?? false,
+    registrationStatus: options?.registrationStatus,
+    registrations: event.registrations
+      ? event.registrations.map((reg) => ({
+          id: reg.id,
+          userId: reg.userId,
+          status: reg.status,
+          createdAt: reg.createdAt.toISOString(),
+          user: {
+            id: reg.user.id,
+            firstName: reg.user.firstName,
+            lastName: reg.user.lastName,
+            email: reg.user.email,
+            matricule: reg.user.matricule,
+            filiere: reg.user.filiere,
+            niveau: reg.user.niveau,
+            initials: `${reg.user.firstName.charAt(0)}${reg.user.lastName.charAt(0)}`.toUpperCase(),
+            membershipStatus: reg.user.membership?.status ?? "PENDING",
+          },
+        }))
+      : undefined,
   };
 }

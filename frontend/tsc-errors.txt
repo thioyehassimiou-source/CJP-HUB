@@ -1,0 +1,13 @@
+src/features/library/components/library-api-dashboard.tsx(1,42): error TS6133: 'useMemo' is declared but its value is never read.
+src/features/library/components/library-api-dashboard.tsx(11,3): error TS6133: 'RESOURCE_LEVELS' is declared but its value is never read.
+src/features/library/components/library-api-dashboard.tsx(161,19): error TS2322: Type '"default" | "outline"' is not assignable to type '"primary" | "outline" | undefined'.
+  Type '"default"' is not assignable to type '"primary" | "outline" | undefined'.
+src/features/library/components/library-api-dashboard.tsx(328,42): error TS2322: Type '{ children: string; type: "submit"; disabled: boolean; }' is not assignable to type 'IntrinsicAttributes & CjpButtonProps'.
+  Property 'disabled' does not exist on type 'IntrinsicAttributes & CjpButtonProps'.
+src/features/library/components/resource-card.tsx(2,37): error TS2307: Cannot find module 'date-fns' or its corresponding type declarations.
+src/features/library/components/resource-card.tsx(3,20): error TS2307: Cannot find module 'date-fns/locale' or its corresponding type declarations.
+src/features/library/components/resource-type-icon.tsx(6,3): error TS6133: 'Globe' is declared but its value is never read.
+src/features/public/components/cjp-tresorerie-page.tsx(2,1): error TS6133: 'Link' is declared but its value is never read.
+src/features/public/components/cjp-tresorerie-page.tsx(237,53): error TS6133: 'i' is declared but its value is never read.
+src/lib/api/events.ts(19,10): error TS2304: Cannot find name 'apiPatch'.
+src/lib/api/resources.ts(1,27): error TS2305: Module '"@/lib/api/client"' has no exported member 'apiDelete'.

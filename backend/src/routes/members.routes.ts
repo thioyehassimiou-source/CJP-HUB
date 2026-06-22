@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { MembershipStatus } from "@prisma/client";
+import { MembershipStatus, Role } from "@prisma/client";
 import { ApiError } from "../lib/api-error";
 import { generateMemberId } from "../lib/member-id";
 import { prisma } from "../lib/prisma";
@@ -13,16 +13,16 @@ function toMemberSummary(member: {
   id: string;
   firstName: string;
   lastName: string;
-  filiere: string;
-  niveau: string;
+  filiere: string | null;
+  niveau: string | null;
   membership: { memberId: string | null; status: MembershipStatus } | null;
 }) {
   return {
     id: member.id,
     firstName: member.firstName,
     lastName: member.lastName,
-    filiere: member.filiere,
-    niveau: member.niveau,
+    filiere: member.filiere ?? "",
+    niveau: member.niveau ?? "",
     memberId: member.membership?.memberId ?? null,
     status: member.membership?.status ?? MembershipStatus.PENDING,
     initials: `${member.firstName[0] ?? ""}${member.lastName[0] ?? ""}`.toUpperCase(),
@@ -34,10 +34,10 @@ function toPendingSummary(member: {
   email: string;
   firstName: string;
   lastName: string;
-  matricule: string;
-  filiere: string;
-  niveau: string;
-  phone: string;
+  matricule: string | null;
+  filiere: string | null;
+  niveau: string | null;
+  phone: string | null;
   createdAt: Date;
   membership: { academicYear: string } | null;
 }) {
@@ -46,10 +46,10 @@ function toPendingSummary(member: {
     email: member.email,
     firstName: member.firstName,
     lastName: member.lastName,
-    matricule: member.matricule,
-    filiere: member.filiere,
-    niveau: member.niveau,
-    phone: member.phone,
+    matricule: member.matricule ?? "",
+    filiere: member.filiere ?? "",
+    niveau: member.niveau ?? "",
+    phone: member.phone ?? "",
     academicYear: member.membership?.academicYear ?? null,
     createdAt: member.createdAt.toISOString(),
     initials: `${member.firstName[0] ?? ""}${member.lastName[0] ?? ""}`.toUpperCase(),
@@ -73,6 +73,156 @@ membersRouter.get(
       members: members.map(toMemberSummary),
     });
   }),
+);
+
+const BUREAU_ORDER: Role[] = [
+  Role.ADMINISTRATEUR,
+  Role.RESPONSABLE,
+  Role.TRESORIER,
+  Role.FORMATEUR,
+];
+
+const TITLE_ORDER: string[] = [
+  "président",
+  "coordinateur",
+  "1er chargé à l'organisation",
+  "2ème chargé à l'organisation",
+  "3ème chargé à l'organisation",
+  "4ème chargé à l'organisation",
+  "chargée à l'information et la communication",
+  "1ère chargée aux formations",
+  "2ème chargé aux formations",
+  "3ème chargé aux formations",
+  "1ère chargée aux ressources humaines",
+  "2ème chargée aux ressources humaines",
+  "trésorière"
+];
+
+membersRouter.get(
+  "/bureau",
+  asyncHandler(async (_req, res) => {
+    const bureau = await prisma.user.findMany({
+      where: {
+        role: { not: Role.MEMBRE },
+        membership: { status: MembershipStatus.ACTIVE },
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        bio: true,
+        filiere: true,
+        bureauTitle: true,
+      },
+    });
+
+    const sorted = [...bureau].sort((a, b) => {
+      const titleA = a.bureauTitle?.toLowerCase() || "";
+      const titleB = b.bureauTitle?.toLowerCase() || "";
+      
+      const indexA = TITLE_ORDER.indexOf(titleA);
+      const indexB = TITLE_ORDER.indexOf(titleB);
+      
+      const weightA = indexA === -1 ? 999 : indexA;
+      const weightB = indexB === -1 ? 999 : indexB;
+
+      if (weightA !== weightB) {
+        return weightA - weightB;
+      }
+
+      return BUREAU_ORDER.indexOf(a.role) - BUREAU_ORDER.indexOf(b.role);
+    });
+
+    res.json({
+      bureau: sorted.map((user) => ({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        bio: user.bio,
+        bureauTitle: user.bureauTitle,
+        filiere: user.filiere,
+        initials: `${user.firstName[0] ?? ""}${user.lastName[0] ?? ""}`.toUpperCase(),
+      })),
+    });
+  }),
+);
+
+membersRouter.get(
+  "/anciens-bureaux",
+  asyncHandler(async (_req, res) => {
+    const mandates = await prisma.bureauMandate.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: {
+        academicYear: "desc",
+      },
+    });
+
+    res.json({
+      anciensBureaux: mandates.map((m) => ({
+        id: m.id,
+        academicYear: m.academicYear,
+        role: m.role,
+        bureauTitle: m.bureauTitle,
+        legacyBio: m.legacyBio,
+        user: {
+          id: m.user.id,
+          firstName: m.user.firstName,
+          lastName: m.user.lastName,
+          initials: `${m.user.firstName[0] ?? ""}${m.user.lastName[0] ?? ""}`.toUpperCase(),
+        },
+      })),
+    });
+  }),
+);
+
+membersRouter.get(
+  "/mon-heritage",
+  requireAuth,
+  asyncHandler(async (req: AuthRequest, res) => {
+    const mandates = await prisma.bureauMandate.findMany({
+      where: { userId: req.user!.id }
+    });
+
+    if (mandates.length === 0) {
+      res.json({ eligible: false, legacyBio: null });
+      return;
+    }
+
+    res.json({ eligible: true, legacyBio: mandates[0].legacyBio });
+  })
+);
+
+membersRouter.patch(
+  "/mon-heritage",
+  requireAuth,
+  asyncHandler(async (req: AuthRequest, res) => {
+    const { legacyBio } = req.body;
+    
+    const count = await prisma.bureauMandate.count({
+      where: { userId: req.user!.id }
+    });
+
+    if (count === 0) {
+      throw new ApiError(403, "Vous ne faites partie d'aucun ancien bureau.");
+    }
+
+    await prisma.bureauMandate.updateMany({
+      where: { userId: req.user!.id },
+      data: { legacyBio: legacyBio?.trim() || null },
+    });
+
+    res.json({ success: true, legacyBio });
+  })
 );
 
 membersRouter.get(

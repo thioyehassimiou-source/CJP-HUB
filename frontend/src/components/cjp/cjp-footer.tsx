@@ -2,10 +2,10 @@ import { Link } from "react-router-dom";
 import { CjpLogo } from "@/components/cjp/cjp-logo";
 
 const FOOTER_LINKS = [
-  { href: "#", label: "Politique de confidentialité" },
-  { href: "#", label: "Conditions d'utilisation" },
-  { href: "#", label: "Contact" },
+  { href: "/projets", label: "Portfolio des Projets" },
+  { href: "/certificats/verify", label: "Vérifier un Certificat" },
   { href: "#", label: "Documentation" },
+  { href: "#", label: "Contact" },
 ];
 
 export function CjpFooter() {

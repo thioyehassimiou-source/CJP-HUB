@@ -43,23 +43,32 @@ enum ProjectStatus {
   ARCHIVED
 }
 
+enum EventRegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum TransactionType {
   INCOME
   EXPENSE
 }
 
 model User {
-  id            String           @id @default(cuid())
-  email         String           @unique
-  passwordHash  String
+  id            String                    @id @default(cuid())
+  email         String                    @unique
+  passwordHash  String?
   firstName     String
   lastName      String
-  matricule     String           @unique
-  filiere       String
-  niveau        String
-  phone         String
+  matricule     String?                   @unique
+  filiere       String?
+  niveau        String?
+  phone         String?
+  googleId      String?                   @unique
+  githubId      String?                   @unique
   bio           String?
-  role          Role             @default(MEMBRE)
+  bureauTitle   String?
+  role          Role                      @default(MEMBRE)
   membership    Membership?
   cotisations   Cotisation[]
   certificates  Certificate[]
@@ -67,11 +76,13 @@ model User {
   attendances   Attendance[]
   projects      ProjectMember[]
   resources     Resource[]
-  transactions  Transaction[]    @relation("CreatedBy")
-  sentMessages  Message[]        @relation("SentMessages")
+  favorites     UserFavorite[]
+  transactions  Transaction[]             @relation("CreatedBy")
+  sentMessages  Message[]                 @relation("SentMessages")
   conversations ConversationParticipant[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  pastMandates  BureauMandate[]
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
 }
 
 model Membership {
@@ -99,75 +110,122 @@ model Cotisation {
   paymentMethod    String?
   paymentPhone     String?
   paymentReference String?
-  academicYear String
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  academicYear     String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
 
 model Formation {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  level       String
-  program     String
-  resources   String?
-  published   Boolean  @default(false)
-  quizzes     Quiz[]
-  certificates Certificate[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                   String                @id @default(cuid())
+  title                String
+  description          String
+  level                String
+  program              String
+  resources            String?
+  published            Boolean               @default(false)
+  quizzes              Quiz[]
+  certificates         Certificate[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  certificateCampaigns CertificateCampaign[]
 }
 
 model Quiz {
-  id           String   @id @default(cuid())
-  formationId  String
-  formation    Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
-  title        String
-  passScore    Int      @default(70)
-  questions    String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String    @id @default(cuid())
+  formationId String
+  formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  title       String
+  passScore   Int       @default(70)
+  questions   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Certificate {
-  id           String    @id @default(cuid())
-  number       String    @unique
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  formationId  String
-  formation    Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
-  issuedAt     DateTime  @default(now())
-  verified     Boolean   @default(true)
+  id          String    @id @default(cuid())
+  number      String    @unique
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  formationId String
+  formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  issuedAt    DateTime  @default(now())
+  verified    Boolean   @default(true)
 
   @@unique([userId, formationId])
 }
 
+model CertificateCampaign {
+  id            String                @id @default(cuid())
+  name          String
+  formationId   String?
+  formation     Formation?            @relation(fields: [formationId], references: [id], onDelete: SetNull)
+  eventId       String?
+  event         Event?                @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  requiredScans Int                   @default(1)
+  status        String                @default("OPEN") // OPEN, CLOSED
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  participants  CampaignParticipant[]
+  scannerLinks  CampaignScannerLink[]
+}
+
+model CampaignScannerLink {
+  id         String              @id @default(cuid())
+  campaignId String
+  campaign   CertificateCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  token      String              @unique @default(cuid())
+  dayNumber  Int                 @default(1)
+  isActive   Boolean             @default(true)
+  createdAt  DateTime            @default(now())
+}
+
+model CampaignParticipant {
+  id             String              @id @default(cuid())
+  campaignId     String
+  campaign       CertificateCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  phoneNumber    String
+  firstName      String?
+  lastName       String?
+  email          String?
+  scannedDays    String              @default("[]") // JSON array of dayNumbers scanned
+  scanCount      Int                 @default(0)
+  claimed        Boolean             @default(false)
+  claimedAt      DateTime?
+  certificateUrl String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([campaignId, phoneNumber])
+}
+
 model Event {
-  id           String   @id @default(cuid())
-  title        String
-  description  String
-  type         EventType
-  speaker      String?
-  startAt      DateTime
-  endAt        DateTime?
-  location     String?
-  meetingLink  String?
-  maxPlaces    Int
-  posterUrl    String?
-  published    Boolean  @default(false)
-  registrations EventRegistration[]
-  attendances  Attendance[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                   String                @id @default(cuid())
+  title                String
+  description          String
+  type                 EventType
+  speaker              String?
+  startAt              DateTime
+  endAt                DateTime?
+  location             String?
+  meetingLink          String?
+  maxPlaces            Int
+  posterUrl            String?
+  published            Boolean               @default(false)
+  registrations        EventRegistration[]
+  attendances          Attendance[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  certificateCampaigns CertificateCampaign[]
 }
 
 model EventRegistration {
-  id        String   @id @default(cuid())
+  id        String                  @id @default(cuid())
   eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event     Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  user      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    EventRegistrationStatus @default(PENDING)
+  createdAt DateTime                @default(now())
 
   @@unique([eventId, userId])
 }
@@ -185,16 +243,16 @@ model Attendance {
 }
 
 model Project {
-  id           String        @id @default(cuid())
+  id           String          @id @default(cuid())
   title        String
   description  String
   technologies String
   githubUrl    String?
   screenshots  String?
-  status       ProjectStatus @default(DRAFT)
+  status       ProjectStatus   @default(DRAFT)
   members      ProjectMember[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 }
 
 model ProjectMember {
@@ -208,17 +266,60 @@ model ProjectMember {
   @@unique([projectId, userId])
 }
 
+enum ResourceType {
+  PDF
+  COURS
+  PRESENTATION
+  VIDEO
+  TUTORIEL
+  YOUTUBE
+  COURSERA
+  UDEMY
+  GITHUB
+  ARTICLE
+  DOCUMENTATION
+  EBOOK
+  COMMUNAUTE
+}
+
+enum ResourceLevel {
+  DEBUTANT
+  INTERMEDIAIRE
+  AVANCE
+}
+
 model Resource {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  category    String
-  fileUrl     String?
-  externalUrl String?
-  uploadedById String
-  uploadedBy  User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  type          ResourceType   @default(ARTICLE)
+  category      String
+  subCategory   String?
+  author        String?
+  fileUrl       String?
+  externalUrl   String?
+  coverUrl      String?
+  level         ResourceLevel  @default(DEBUTANT)
+  tags          String[]       @default([])
+  viewCount     Int            @default(0)
+  favoriteCount Int            @default(0)
+  isPublished   Boolean        @default(true)
+  uploadedById  String
+  uploadedBy    User           @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  favorites     UserFavorite[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model UserFavorite {
+  id         String   @id @default(cuid())
+  userId     String
+  resourceId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, resourceId])
 }
 
 model Transaction {
@@ -269,4 +370,18 @@ model Message {
   sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   content        String
   createdAt      DateTime     @default(now())
+}
+
+model BureauMandate {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  academicYear String
+  role         Role
+  bureauTitle  String?
+  legacyBio    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, academicYear])
 }

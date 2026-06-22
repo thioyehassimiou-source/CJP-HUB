@@ -8,11 +8,11 @@ import type {
 } from "@/lib/api/types";
 
 export function fetchFinanceSummary() {
-  return apiGet<FinanceSummary>("/finance/summary", false);
+  return apiGet<FinanceSummary>("/finance/summary", true);
 }
 
 export function fetchFinanceTransactions() {
-  return apiGet<{ transactions: ApiFinanceTransaction[] }>("/finance/transactions", false);
+  return apiGet<{ transactions: ApiFinanceTransaction[] }>("/finance/transactions", true);
 }
 
 export function fetchMyCotisation() {

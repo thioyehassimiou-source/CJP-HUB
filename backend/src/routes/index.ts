@@ -10,6 +10,7 @@ import { membersRouter } from "./members.routes";
 import { projectsRouter } from "./projects.routes";
 import { resourcesRouter } from "./resources.routes";
 import { statsRouter } from "./stats.routes";
+import { campaignsRouter } from "./campaigns.routes";
 
 export const apiRouter = Router();
 
@@ -24,3 +25,4 @@ apiRouter.use("/projects", projectsRouter);
 apiRouter.use("/resources", resourcesRouter);
 apiRouter.use("/messages", messagesRouter);
 apiRouter.use("/stats", statsRouter);
+apiRouter.use("/campaigns", campaignsRouter);

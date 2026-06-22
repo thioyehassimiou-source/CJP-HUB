@@ -7,6 +7,7 @@ import { prisma } from "../lib/prisma";
 import { asyncHandler } from "../middleware/async-handler";
 import { type AuthRequest, requireAuth, requireRole } from "../middleware/auth";
 import { requireActiveMember } from "../middleware/membership";
+import { emitNewMessageToConversation } from "../lib/socket";
 
 export const messagesRouter = Router();
 
@@ -223,7 +224,12 @@ messagesRouter.post(
       data: { updatedAt: new Date() },
     });
 
-    res.status(201).json({ message: toPublicMessage(message, req.user!.id) });
+    const publicMessage = toPublicMessage(message, req.user!.id);
+    
+    // Émettre l'événement Socket.IO
+    emitNewMessageToConversation(conversation.id, publicMessage);
+
+    res.status(201).json({ message: publicMessage });
   }),
 );
 
@@ -264,6 +270,11 @@ messagesRouter.post(
       data: { updatedAt: new Date() },
     });
 
-    res.status(201).json({ message: toPublicMessage(message, req.user!.id) });
+    const publicMessage = toPublicMessage(message, req.user!.id);
+    
+    // Émettre l'événement Socket.IO
+    emitNewMessageToConversation(conversation.id, publicMessage);
+
+    res.status(201).json({ message: publicMessage });
   }),
 );

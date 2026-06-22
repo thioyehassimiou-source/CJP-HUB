@@ -13,6 +13,7 @@ import {
 import type { ApiChatMessage, ApiConversationPreview, ApiMember } from "@/lib/api/types";
 import { canManageMembers } from "@/lib/roles";
 import { cn } from "@/lib/utils";
+import { initSocketConnection, disconnectSocket } from "@/lib/api/socket";
 
 function formatMessageTime(value: string) {
   return new Intl.DateTimeFormat("fr-FR", {
@@ -57,7 +58,11 @@ export function MessagesApiDashboard() {
       .then(([conversationData, memberData]) => {
         setConversations(conversationData.conversations);
         setMembers(memberData.members.filter((member) => member.id !== user?.id));
-        setActiveId((current) => current ?? conversationData.conversations[0]?.id ?? null);
+        // Force la sélection de la première conversation si rien n'est sélectionné
+        setActiveId((current) => {
+          if (current) return current;
+          return conversationData.conversations.length > 0 ? conversationData.conversations[0].id : null;
+        });
       })
       .catch((error) => {
         setErrorMessage(
@@ -72,22 +77,38 @@ export function MessagesApiDashboard() {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!activeId) return;
+    if (!user?.id) return;
 
-    const interval = window.setInterval(() => {
+    const socket = initSocketConnection();
+    if (!socket) return;
+
+    const handleNewMessage = (message: ApiChatMessage) => {
+      setActiveId((currentActiveId) => {
+        if (currentActiveId === message.conversationId) {
+          setMessages((current) => {
+            if (current.some((m) => m.id === message.id)) return current;
+            return [...current, message];
+          });
+        }
+        return currentActiveId;
+      });
+    };
+
+    const handleConversationUpdated = () => {
       fetchConversations()
-        .then(({ conversations: data }) => {
-          setConversations(data);
-        })
+        .then(({ conversations: data }) => setConversations(data))
         .catch(() => undefined);
+    };
 
-      fetchConversationMessages(activeId)
-        .then((data) => setMessages(data.messages))
-        .catch(() => undefined);
-    }, 8000);
+    socket.on("newMessage", handleNewMessage);
+    socket.on("conversationUpdated", handleConversationUpdated);
 
-    return () => window.clearInterval(interval);
-  }, [activeId]);
+    return () => {
+      socket.off("newMessage", handleNewMessage);
+      socket.off("conversationUpdated", handleConversationUpdated);
+      disconnectSocket();
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (!activeId) {
@@ -175,8 +196,8 @@ export function MessagesApiDashboard() {
   }
 
   return (
-    <div className="grid h-full min-h-[560px] grid-cols-1 overflow-hidden rounded-xl border border-[var(--cjp-border)] bg-[var(--cjp-dark)] lg:grid-cols-[320px_1fr]">
-      <aside className="flex flex-col border-b border-[var(--cjp-border)] lg:border-r lg:border-b-0">
+    <div className="grid h-full min-h-[560px] grid-cols-1 overflow-hidden rounded-xl border border-[var(--cjp-border)] bg-[#1a1a1a] lg:grid-cols-[320px_1fr] shadow-2xl">
+      <aside className="flex flex-col border-b border-[var(--cjp-border)] bg-[#141414] lg:border-r lg:border-b-0">
         <div className="border-b border-[var(--cjp-border)] p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -251,17 +272,21 @@ export function MessagesApiDashboard() {
                     <div className="flex items-center justify-between gap-2">
                       <p className="truncate font-semibold text-[var(--cjp-white)]">{conversation.title}</p>
                       {conversation.lastMessage ? (
-                        <span className="shrink-0 text-[10px] text-[var(--cjp-text-muted)]">
+                        <span className="shrink-0 text-[10px] text-[var(--cjp-text-muted)] font-medium">
                           {formatMessageTime(conversation.lastMessage.createdAt)}
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-1 text-xs text-[var(--cjp-text-muted)]">{conversation.subtitle}</p>
+                    <p className="mt-1 text-xs text-[var(--cjp-text-muted)]/80">{conversation.subtitle}</p>
                     {conversation.lastMessage ? (
                       <p className="mt-2 truncate text-sm text-[var(--cjp-text-muted)]">
                         {truncatePreview(conversation.lastMessage.content)}
                       </p>
-                    ) : null}
+                    ) : (
+                      <p className="mt-2 truncate text-sm italic text-[var(--cjp-text-muted)]/60">
+                        Nouvelle conversation
+                      </p>
+                    )}
                   </div>
                 </div>
               </button>
@@ -359,16 +384,32 @@ export function MessagesApiDashboard() {
                 </div>
               </form>
             ) : (
-              <div className="border-t border-[var(--cjp-border)] px-5 py-4 text-sm text-[var(--cjp-text-muted)]">
+              <div className="border-t border-[var(--cjp-border)] bg-[#141414] px-5 py-4 text-center text-sm font-medium text-[var(--cjp-text-muted)]">
                 {activeConversation.type === "ANNOUNCEMENT"
-                  ? "Canal en lecture seule pour les membres."
+                  ? "🔒 Canal en lecture seule réservé aux annonces du bureau."
                   : "Adhésion active requise pour envoyer un message."}
               </div>
             )}
           </>
         ) : (
-          <div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-[var(--cjp-text-muted)]">
-            Sélectionnez une conversation pour afficher les messages.
+          <div className="flex flex-1 flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#1a1a1a] to-[#111111]">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#2a2a2a] text-[var(--cjp-gold)] shadow-lg ring-4 ring-[#1a1a1a]">
+              <MessageSquare className="h-8 w-8" />
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-[var(--cjp-white)]">Vos Messages</h3>
+            <p className="mb-8 max-w-sm text-sm text-[var(--cjp-text-muted)]">
+              Sélectionnez une conversation existante ou démarrez une nouvelle discussion avec un membre du club.
+            </p>
+            {user?.membership?.status === "ACTIVE" ? (
+              <button
+                type="button"
+                onClick={() => setShowNewMessage(true)}
+                className="btn-cjp inline-flex items-center gap-2 shadow-xl shadow-black/50"
+              >
+                <UserPlus className="h-4 w-4" />
+                Démarrer une conversation
+              </button>
+            ) : null}
           </div>
         )}
 

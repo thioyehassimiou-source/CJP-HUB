@@ -47,14 +47,25 @@ export function toPublicResource(
   resource: Resource & {
     uploadedBy: Pick<User, "firstName" | "lastName">;
   },
+  userId?: string,
+  userFavorites?: Set<string>,
 ) {
   return {
     id: resource.id,
     title: resource.title,
     description: resource.description,
+    type: resource.type,
     category: resource.category,
+    subCategory: resource.subCategory,
+    author: resource.author,
     fileUrl: resource.fileUrl,
     externalUrl: resource.externalUrl,
+    coverUrl: resource.coverUrl,
+    level: resource.level,
+    tags: resource.tags,
+    viewCount: resource.viewCount,
+    favoriteCount: resource.favoriteCount,
+    isFavorite: userFavorites ? userFavorites.has(resource.id) : false,
     uploadedBy: `${resource.uploadedBy.firstName} ${resource.uploadedBy.lastName}`,
     createdAt: resource.createdAt.toISOString(),
   };

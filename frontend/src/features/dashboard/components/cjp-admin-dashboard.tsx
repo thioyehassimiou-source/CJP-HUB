@@ -14,6 +14,8 @@ import { CjpButton } from "@/components/cjp/cjp-button";
 import { CjpDisplayTitle } from "@/components/cjp/cjp-display-title";
 import { DashboardLivePanels } from "@/features/dashboard/components/dashboard-live-panels";
 import { PendingRegistrationsPanel } from "@/features/dashboard/components/pending-registrations-panel";
+import { PendingEventRegistrationsPanel } from "@/features/dashboard/components/pending-event-registrations-panel";
+import { CampaignAdminPanel } from "@/features/dashboard/components/campaign-admin-panel";
 import { CJP_DASHBOARD_POLES } from "@/features/dashboard/data/admin-dashboard-data";
 import { fetchStatsOverview } from "@/lib/api/auth";
 import type { StatsOverview } from "@/lib/api/types";
@@ -169,6 +171,8 @@ export function CjpAdminDashboard() {
 
       <DashboardLivePanels stats={stats} />
 
+      <CampaignAdminPanel />
+
       <div className="cjp-card-dark p-6">
         <h3 className="mb-4 text-lg font-bold text-[var(--cjp-gold)]">Actions rapides</h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -195,6 +199,7 @@ export function CjpAdminDashboard() {
       </div>
 
       <PendingRegistrationsPanel />
+      <PendingEventRegistrationsPanel />
     </div>
   );
 }
